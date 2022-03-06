@@ -61,5 +61,5 @@ async def on_message(message: discord.message.Message):
 
 
 if __name__ == '__main__':
-    #cb.train(5000)
+    cb.train(10000)
     bot.run(TOKEN)

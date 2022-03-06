@@ -21,13 +21,15 @@ class ChatBot:
         self.nn.load_network([
             Dense(self.message_list_len * self.max_message_len, self.message_list_len * self.max_message_len),
             TanH(),
-            Dense(self.message_list_len * self.max_message_len, self.message_list_len * self.max_message_len),
+            Dense(self.message_list_len * self.max_message_len, self.message_list_len * self.max_message_len * 2),
             TanH(),
-            Dense(self.message_list_len * self.max_message_len, self.max_message_len),
+            Dense(self.message_list_len * self.max_message_len * 2, self.message_list_len * self.max_message_len),
             TanH(),
-            Dense(self.max_message_len, self.max_message_len),
+            Dense(self.message_list_len * self.max_message_len, self.max_message_len * 3),
             TanH(),
-            Dense(self.max_message_len, self.max_message_len),
+            Dense(self.max_message_len * 3, self.max_message_len * 2),
+            TanH(),
+            Dense(self.max_message_len * 2, self.max_message_len),
             TanH()
         ])
 
@@ -118,7 +120,7 @@ class ChatBot:
             print('', end='\r')
             print(
                 f'{round((i + 1) / iterations * 100, 2)}% of {iterations} epochs, '
-                f'accuracy = {error}',
+                f'accuracy = {error} = {round((2 - error) / 2 * 100, 2)}%',
                 end='')
 
             self.save_network_to_file(log=False)
@@ -151,7 +153,7 @@ class ChatBot:
 
                 error = self.nn.epoch(np.array(inputs), np.array(eo_floats))
 
-        print(f"Accuracy = {error}")
+        print(f"Accuracy = {error} = {round((2 - error) / 2 * 100, 2)}%")
         self.save_conversations_to_file(log=False)
         self.save_network_to_file(log=False)
         return expected_output
