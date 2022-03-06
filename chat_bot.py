@@ -8,6 +8,7 @@ class Conversation:
 
 
 class ChatBot:
+    message_list_len: int
     conversations: list[Conversation] = []
 
     def __init__(self, message_list_len=3, max_message_len=100, save_file="chat_bot_network.nn",
@@ -64,7 +65,7 @@ class ChatBot:
         return out
 
     def trim_message(self, message: str):
-        out = []
+        out = ""
 
         for i in range(len(message)):
             if i < self.max_message_len:
@@ -78,7 +79,7 @@ class ChatBot:
         for i in range(self.message_list_len - 1):
             self.last_messages[i] = self.last_messages[i + 1]
 
-        self.last_messages[self.message_list_len - 1] = self.trim_message(message.lower())
+        self.last_messages[len(self.last_messages) - 1] = self.trim_message(message.lower())
 
     def get_answer(self):
         inputs = []
@@ -95,6 +96,8 @@ class ChatBot:
         self.load_conversations_from_file()
         print("Training..")
         for i in range(iterations):
+            error = 0
+
             for con in self.conversations:
                 eo_floats = []
 
@@ -109,12 +112,14 @@ class ChatBot:
                     for f in fa:
                         inputs.append([f])
 
-                error = self.nn.epoch(np.array(inputs), np.array(eo_floats))
-                print('', end='\r')
-                print(
-                    f'{round((i + 1) / iterations * 100, 2)}% of {iterations} epochs, '
-                    f'accuracy = {error}',
-                    end='')
+                error += self.nn.epoch(np.array(inputs), np.array(eo_floats))
+
+            error /= len(self.conversations)
+            print('', end='\r')
+            print(
+                f'{round((i + 1) / iterations * 100, 2)}% of {iterations} epochs, '
+                f'accuracy = {error}',
+                end='')
 
             self.save_network_to_file(log=False)
 
@@ -125,7 +130,7 @@ class ChatBot:
         self.save_network_to_file()
 
     def epoch(self, expected_output: str, iterations=10):
-        self.load_conversations_from_file()
+        self.load_conversations_from_file(log=False)
         self.conversations.append(Conversation(self.last_messages, expected_output))
         error = 10
 
@@ -147,25 +152,29 @@ class ChatBot:
                 error = self.nn.epoch(np.array(inputs), np.array(eo_floats))
 
         print(f"Accuracy = {error}")
-        self.save_conversations_to_file()
-        self.save_network_to_file()
+        self.save_conversations_to_file(log=False)
+        self.save_network_to_file(log=False)
         return expected_output
 
-    def save_conversations_to_file(self):
-        print("Saving..", end='\r')
+    def save_conversations_to_file(self, log=True):
+        if log:
+            print("Saving..", end='\r')
         with open(self.conversation_file, 'wb') as file:
             pickle.dump(self.conversations, file, protocol=pickle.HIGHEST_PROTOCOL)
-        print(f"Saved in {self.conversation_file}")
+        if log:
+            print(f"Saved in {self.conversation_file}")
 
-    def load_conversations_from_file(self):
+    def load_conversations_from_file(self, log=True):
         if os.stat(self.conversation_file).st_size == 0:
             return
 
-        print("Loading..", end='\r')
+        if log:
+            print("Loading..", end='\r')
         with open(self.conversation_file, 'rb') as file:
             conversations = pickle.load(file)
             self.conversations = conversations
-        print(f"Loaded from {self.conversation_file}")
+        if log:
+            print(f"Loaded from {self.conversation_file}")
 
     def save_network_to_file(self, file: str = None, log=True):
         if file is None:
