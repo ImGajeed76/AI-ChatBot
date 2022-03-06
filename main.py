@@ -1,27 +1,61 @@
-from neural_network import *
+import discord
+from discord.ext import commands
 
-# reshape the inputs because we expect a column vector
-# reshape to (example count, input size, height of matrix)
-training_inputs = np.reshape([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]], (8, 3, 1))
-training_outputs = np.reshape([[0], [0.1], [0.2], [0.3], [0.4], [0.5], [0.6], [0.7]], (8, 1, 1))
+from chat_bot import *
 
-nn = NeuralNetwork([
-    DenseLayer(3, 5),
-    TanH(),
-    DenseLayer(5, 3),
-    TanH(),
-    DenseLayer(3, 1),
-    TanH()
-])
 
-nn.train(training_inputs, training_outputs, epochs=50000)
+def get_token_from_file(file_path: str):
+    file = open(file_path, 'r')
+    return file.read()
 
+
+TOKEN = get_token_from_file("private/TOKEN.txt")
+COMMAND_PREFIX = "-"
+BOT_PREFIX = (COMMAND_PREFIX, "#bot.")
+
+bot = commands.Bot(command_prefix=BOT_PREFIX, help_command=None)
+
+cb = ChatBot(max_message_len=150, message_list_len=4)
+cb.load_network_from_file()
+
+
+# cb.train(1000)
+
+
+@bot.event
+async def on_ready():
+    print(f"Logged in as {bot.user}")
+
+
+async def get_answer(channel):
+    for m in cb.last_messages:
+        print(f"\033[90m# {m}\033[0m")
+
+    print(f"\033[94m> ({cb.get_answer()})\033[0m")
+    expected_output = input("> ")
+
+    cb.epoch(expected_output)
+    cb.push_message(expected_output)
+    await channel.send(expected_output)
+
+
+@bot.event
+async def on_message(message: discord.message.Message):
+    if not message.author.bot:
+        print("\n" * 100)
+        new_message = message.content
+        cb.push_message(new_message)
+
+        await get_answer(message.channel)
+
+
+bot.run(TOKEN)
+"""
 while True:
-    a = int(input("A: "))
-    b = int(input("B: "))
-    c = int(input("C: "))
+    some_input = input("Enter some input: ")
+    cb.push_message(some_input)
 
-    inputs = np.array([[a], [b], [c]])
-    output = nn.forward(inputs)
-
-    print(output)
+    expected_answer = cb.epoch()
+    cb.push_message(expected_answer)
+    print()
+"""
