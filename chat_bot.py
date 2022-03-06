@@ -120,7 +120,7 @@ class ChatBot:
             print('', end='\r')
             print(
                 f'{round((i + 1) / iterations * 100, 2)}% of {iterations} epochs, '
-                f'accuracy = {error} = {round((2 - error) / 2 * 100, 2)}%',
+                f'accuracy = {error} = {round((1 - error) / 1 * 100, 2)}%',
                 end='')
 
             self.save_network_to_file(log=False)
@@ -153,7 +153,7 @@ class ChatBot:
 
                 error = self.nn.epoch(np.array(inputs), np.array(eo_floats))
 
-        print(f"Accuracy = {error} = {round((2 - error) / 2 * 100, 2)}%")
+        print(f"Accuracy = {error} = {round((1 - error) / 1 * 100, 2)}%")
         self.save_conversations_to_file(log=False)
         self.save_network_to_file(log=False)
         return expected_output
